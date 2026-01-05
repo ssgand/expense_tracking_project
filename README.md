@@ -43,8 +43,8 @@ The application is **API-only** and intended to be consumed by mobile or web cli
 - Python
 - Django
 - Django REST Framework
-- PostgreSQL (recommended)
-- JWT or Token Authentication
+- mysql (recommended)
+- Token Authentication
 
 ---
 
@@ -64,7 +64,7 @@ The application is **API-only** and intended to be consumed by mobile or web cli
 ### Authentication Method
 
 - Email + Password
-- JWT-based authentication (recommended)
+- Token authentication (recommended)
 
 ```
 USERNAME_FIELD = email
@@ -100,13 +100,12 @@ All endpoints require authentication unless stated otherwise.
 
 ### Signup
 
-**POST** `/api/signup/`
+**POST** `/api/auth/register/`
 
 #### Request
 ```json
 {
-  "username": "steve",
-  "email": "steve@example.com",
+  "email": "steve@gmails.com",
   "preferred_currency": "USD",
   "password": "StrongPassword123"
 }
@@ -125,7 +124,7 @@ All endpoints require authentication unless stated otherwise.
 
 ### Login
 
-**POST** `/api/login/`
+**POST** `/api/auth/login/`
 
 #### Request
 ```json
@@ -138,8 +137,7 @@ All endpoints require authentication unless stated otherwise.
 #### Response
 ```json
 {
-  "access": "jwt-access-token",
-  "refresh": "jwt-refresh-token"
+  "token": "jwt-access-token",
 }
 ```
 
@@ -147,7 +145,7 @@ All endpoints require authentication unless stated otherwise.
 
 ### Logout
 
-**POST** `/api/logout/`
+**POST** `/api/auth/logout/`
 
 Invalidates the refresh token.
 
@@ -183,7 +181,7 @@ Invalidates the refresh token.
 }
 ```
 
-#### Response
+#### Response 
 ```json
 {
   "username": "steve_g",
@@ -197,7 +195,7 @@ Invalidates the refresh token.
 
 ### Change Password
 
-**POST** `/api/change-password/`
+**POST** `/api/auth/change-password/`
 
 #### Request
 ```json
@@ -374,6 +372,11 @@ YEARLY
 - Users can deactivate accounts
 - No physical deletion of user data
 - Records remain for audit and recovery
+
+### Reports (Period Dependent)
+- Users can request periodic reports to assess their expenses
+- Users can compare their expenses to the budget they set for themselves
+- Reports will also include currency changes where necessary
 
 ---
 
