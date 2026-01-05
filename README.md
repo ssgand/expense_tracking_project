@@ -1,187 +1,389 @@
-# Expense Tracker Application
+# Expense Tracker API
 
-## Project Overview
-
-The Expense Tracker Application is a backend-focused Django project designed to help users record, categorize, and analyze their personal expenses. The application provides a structured data model that supports expense entry, categorization, budgeting, and future reporting features such as weekly, monthly, and yearly summaries.
-
-At this stage, the project focuses on **database design and domain modeling**, establishing a solid foundation for future API development, authentication, and frontend integration.
+A RESTful, API-first backend built with **Django** and **Django REST Framework**, designed for expense tracking, recurring expenses, budgets, and categories using a **custom user model**.
 
 ---
 
-## Project Objectives
+## Table of Contents
 
-* Allow users to record and manage personal expenses
-* Classify expenses using predefined and user-defined categories
-* Support budget tracking and financial summaries over time
-* Provide a scalable backend suitable for REST API exposure
+- Overview
+- Tech Stack
+- Design Principles
+- Authentication
+- User Model
+- API Endpoints
+  - Authentication
+  - Profile
+  - Categories
+  - Budgets
+  - Recurring Expenses
+- Validation Rules
+- Security & Ownership Rules
+- Planned Features
+- Project Status
 
 ---
 
-## Technology Stack
+## Overview
 
-* **Backend Framework:** Django
-* **Language:** Python
-* **Database:** Django ORM
-* **Project Type:** Backend / API-first architecture
+This API allows users to:
+
+- Sign up and authenticate using email
+- Manage their profile
+- Create and manage budgets
+- Track recurring expenses
+- Organize expenses using categories
+
+The application is **API-only** and intended to be consumed by mobile or web clients.
 
 ---
 
-## Project Structure (Current)
+## Tech Stack
+
+- Python
+- Django
+- Django REST Framework
+- PostgreSQL (recommended)
+- JWT or Token Authentication
+
+---
+
+## Design Principles
+
+- API-only (no server-rendered pages)
+- Custom user model (email-based authentication)
+- Explicit ownership enforcement
+- No hard deletion of user data
+- Secure password handling via Django
+- Clear separation of concerns (models, serializers, views)
+
+---
+
+## Authentication
+
+### Authentication Method
+
+- Email + Password
+- JWT-based authentication (recommended)
 
 ```
-expense_tracking_project/
-│
-├── expense_tracking_app/
-│   ├── models.py
-│   ├── admin.py
-│   ├── apps.py
-│   ├── migrations/
-│   └── __init__.py
-│
-├── expense_tracking_project/
-│   ├── settings.py
-│   ├── urls.py
-│   ├── asgi.py
-│   └── wsgi.py
-│
-├── manage.py
-└── README.md
+USERNAME_FIELD = email
 ```
 
 ---
 
-## Data Models Implemented
+## User Model
 
-The project currently includes a comprehensive and well-normalized domain model that covers users, categories, expenses, recurring expenses, and budgets. Abstract base models are used to reduce duplication and enforce consistency.
+### Fields
 
-### Abstract Base Models
+| Field | Type |
+|-----|-----|
+| username | string |
+| email | string (unique) |
+| preferred_currency | string (ISO 4217) |
+| is_active | boolean |
+| is_staff | boolean |
+| created_at | datetime |
+| updated_at | datetime |
 
-#### TimestampedModel (Abstract)
-
-* Provides `created_at` and `updated_at` fields
-* Automatically tracks record creation and modification times
-* Inherited by all core domain models to ensure auditability
-
-#### UserCategoryRelationship (Abstract)
-
-* Defines a reusable relationship between a user and a category
-* Enforces ownership and categorization across multiple models
-* Used by expenses, recurring expenses, and budgets
-
-### CustomUser Model
-
-* Custom authentication model extending `AbstractBaseUser` and `PermissionsMixin`
-* Uses **email as the primary login identifier** (`USERNAME_FIELD = 'email'`)
-* Fields:
-
-  * `username`
-  * `email` (unique)
-  * `preferred_currency` (ISO 4217, 3 characters)
-  * `is_staff`, `is_active`
-* Includes a custom user manager for controlled user and superuser creation
-* Designed to support multi-currency expense tracking
-
-### Category Model
-
-* Stores expense categories (e.g., Food, Transport, Rent)
-* Fields:
-
-  * `name`
-  * `description`
-* Timestamped for auditing and reporting purposes
-
-### Expense Model
-
-* Represents one-time expense entries
-* Inherits user–category ownership via `UserCategoryRelationship`
-* Fields:
-
-  * `amount`
-  * `currency`
-  * `description`
-  * `expense_date`
-* Supports precise financial values using `DecimalField`
-
-### RecurringExpense Model
-
-* Represents repeating expenses such as rent or subscriptions
-* Inherits user–category ownership
-* Fields:
-
-  * `amount`
-  * `currency`
-  * `description`
-  * `next_pay_date`
-  * `frequency` (Daily, Weekly, Monthly, Yearly)
-* Designed to support automated expense generation in future phases
-
-### Budget Model
-
-* Represents spending limits over a defined time period
-* Inherits user–category ownership
-* Fields:
-
-  * `amount`
-  * `currency`
-  * `start_date`
-  * `end_date`
-* Enables budget tracking and overspending detection
+Passwords are **never stored in plain text** and are hashed using Django’s built-in password hashing framework.
 
 ---
 
-## Key Design Decisions
+## API Endpoints
 
-* **Model-first approach:** Ensures data integrity and scalability before building APIs or UI
-* **Normalized schema:** Reduces redundancy and improves reporting accuracy
-* **Extensibility:** Models are designed to support future features without major refactoring
+All endpoints require authentication unless stated otherwise.
 
 ---
 
-## Current Progress Summary
+## Authentication Endpoints
 
-**Completed:**
+### Signup
 
-* Django project initialization
-* Creation of dedicated `expense_tracking_app`
-* Full implementation of core data models
-* Initial migrations generated
-* Models structured for future REST API integration
+**POST** `/api/signup/`
 
-**Not Yet Started:**
-
-* User authentication endpoints
-* CRUD APIs for expenses and categories
-* Budget logic and validations
-* Reporting and summaries
-* Frontend or mobile integration
-
----
-
-## How to Run the Project (Current State)
-
-```bash
-# Install dependencies
-pip install django
-
-# Apply migrations
-python manage.py migrate
-
-# Run development server
-python manage.py runserver
+#### Request
+```json
+{
+  "username": "steve",
+  "email": "steve@example.com",
+  "preferred_currency": "USD",
+  "password": "StrongPassword123"
+}
 ```
+
+#### Response
+```json
+{
+  "id": 1,
+  "email": "steve@example.com",
+  "preferred_currency": "USD"
+}
+```
+
+---
+
+### Login
+
+**POST** `/api/login/`
+
+#### Request
+```json
+{
+  "email": "steve@example.com",
+  "password": "StrongPassword123"
+}
+```
+
+#### Response
+```json
+{
+  "access": "jwt-access-token",
+  "refresh": "jwt-refresh-token"
+}
+```
+
+---
+
+### Logout
+
+**POST** `/api/logout/`
+
+Invalidates the refresh token.
+
+---
+
+## Profile
+
+### Get Profile
+
+**GET** `/api/profile/`
+
+#### Response
+```json
+{
+  "username": "steve",
+  "email": "steve@example.com",
+  "preferred_currency": "USD",
+  "created_at": "2026-01-01T10:00:00Z"
+}
+```
+
+---
+
+### Update Profile
+
+**PATCH** `/api/profile/`
+
+#### Request
+```json
+{
+  "username": "steve_g",
+  "preferred_currency": "EUR"
+}
+```
+
+#### Response
+```json
+{
+  "username": "steve_g",
+  "preferred_currency": "EUR"
+}
+```
+
+---
+
+## Password Management
+
+### Change Password
+
+**POST** `/api/change-password/`
+
+#### Request
+```json
+{
+  "current_password": "StrongPassword123",
+  "new_password": "NewStrongerPassword456"
+}
+```
+
+#### Response
+```json
+{
+  "detail": "Password updated successfully"
+}
+```
+
+---
+
+## Categories
+
+Categories are **global reference data** and are not user-owned.
+
+---
+
+### Create Category
+
+**POST** `/api/categories/`
+
+#### Request
+```json
+{
+  "name": "Food",
+  "description": "Food and groceries"
+}
+```
+
+#### Response
+```json
+{
+  "id": 1,
+  "name": "Food",
+  "description": "Food and groceries"
+}
+```
+
+---
+
+### List Categories
+
+**GET** `/api/categories/`
+
+#### Response
+```json
+[
+  {
+    "id": 1,
+    "name": "Food",
+    "description": "Food and groceries"
+  }
+]
+```
+
+---
+
+## Budgets
+
+Budgets are **user-owned** and linked to categories.
+
+---
+
+### Create Budget
+
+**POST** `/api/budgets/`
+
+#### Request
+```json
+{
+  "category": 1,
+  "amount": 500.00,
+  "currency": "USD",
+  "start_date": "2026-01-01",
+  "end_date": "2026-01-31"
+}
+```
+
+#### Response
+```json
+{
+  "id": 1,
+  "category": 1,
+  "amount": "500.000",
+  "currency": "USD",
+  "start_date": "2026-01-01",
+  "end_date": "2026-01-31"
+}
+```
+
+---
+
+## Recurring Expenses
+
+Recurring expenses are **user-owned**, category-based, and scheduled.
+
+---
+
+### Frequency Enum
+
+```
+DAILY
+WEEKLY
+MONTHLY
+YEARLY
+```
+
+---
+
+### Create Recurring Expense
+
+**POST** `/api/recurring-expenses/`
+
+#### Request
+```json
+{
+  "category": 1,
+  "amount": 50.00,
+  "currency": "USD",
+  "description": "Internet subscription",
+  "next_pay_date": "2026-02-01",
+  "frequency": "MONTHLY"
+}
+```
+
+#### Response
+```json
+{
+  "id": 1,
+  "category": 1,
+  "amount": "50.000",
+  "currency": "USD",
+  "description": "Internet subscription",
+  "next_pay_date": "2026-02-01",
+  "frequency": "MONTHLY"
+}
+```
+
+---
+
+## Validation Rules
+
+- `amount` must be greater than 0
+- `start_date` must be before `end_date`
+- `next_pay_date` cannot be in the past
+- `frequency` must be a valid enum value
+
+---
+
+## Security & Ownership Rules
+
+- Users can only access their own budgets and recurring expenses
+- `user` field is never writable via the API
+- All endpoints require authentication
+- Passwords are hashed and never returned in responses
+
+---
+
+## Planned Features (Not Implemented Yet)
+
+### Email Change with Verification
+- Two-step email update
+- Token-based verification
+- Expiration handling
+
+### Soft Delete (Account Deactivation)
+- Users can deactivate accounts
+- No physical deletion of user data
+- Records remain for audit and recovery
 
 ---
 
 ## Project Status
 
-**Status:** In Progress
-
-**Current Phase:** Backend modeling and database design
+**Current version:** Core API complete  
+**Next version:** Account lifecycle management
 
 ---
 
-## Author
+## Notes
 
-**Name:** Steve Gandhi Sekamondo
-
-**Project:** Expense Tracker App
+This project is structured for long-term maintainability, security correctness, and future expansion.
